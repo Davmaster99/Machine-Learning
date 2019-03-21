@@ -1,0 +1,153 @@
+---
+title: "Week 3"
+author: "COSTA DOS SANTOS David"
+date: "`r format(Sys.time())`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    highlight: zenburn
+    theme: united
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+subtitle: Logistic Regression
+---
+**Exercise 1**  
+*Download the Social_Network_Ads dataset  and import it into R.*
+```{r}
+mydata = read.csv("Social_Network_Ads.csv") #read csv file 
+summary(mydata )
+
+```
+**Exercise 2**  
+*Explore and Describe the dataset (you can use str() and summary() functions, you can calculate and visualize the correlations, show some histograms, scatterplots, pie charts, etc..).*
+```{r}
+summary(mydata)
+str(mydata)
+cor(mydata$Age,mydata$Purchased)
+
+
+```
+We study a population of 204 female and 196 male, aged from 18 to 60 with a mean of 37 years old. Their salary is variating between 15000 and 150000 with a mean of 69742. 35,75% people bought the produce from the ad.
+
+**Exercise 3**  
+ *Now we are going to split the dataset into training set and test set. Last week we did it manually. From now on we will split it randomly, you can use this code (after undestanding it of course):*
+```{r}
+library(caTools) # install it first in the console
+set.seed(123)
+# we use the function set.seed() with the same seed number
+# to randomly generate the same values, you already know that right? 
+#and you know why we want to generate the same values, am I wrong? 
+split=sample.split(mydata$Purchased,SplitRatio=0.75)
+# here we chose the SplitRatio to 75% of the dataset,
+# and 25% for the test set.
+training_set = subset(mydata, split == TRUE)
+# we use subset to split the dataset
+test_set = subset(mydata, split == FALSE)
+dim(test_set)
+#size training set
+dim(training_set)
+```
+
+**Exercise 4**  
+*Scale the input variables in both training set and test set. Do you know what is scaling? Explain it one sentence.*
+*Scaling is used to center and/or scale the columns of a numeric matrix.*
+```{r}
+#scale(mydata$User.ID, center = TRUE, scale = TRUE)
+#scale(mydata$Age, center = TRUE, scale = TRUE)
+#scale(mydata$EstimatedSalary, center = TRUE, scale = TRUE)
+
+
+```
+**Exercise 5**  
+*Now fit a simple logistic regression model of Purchased in function of Age.*
+```{r}
+model=glm(formula = Purchased ~ Age, family = binomial, data = training_set)
+model
+```
+
+**Exercise 6**  
+*As you saw in the Logistic Regression chapter and in the previous question, we choose argument family to be binomial when we use the function glm. Explain why!*  
+We must pass in the argument family=binomial in order to tell R to run a logistic regression rather than some other type of generalized linear model. And because Purchased can only be 0 or 1.
+
+**Exercise 7**  
+*Write in a equation the model you obtained in question *  
+The equation is 0.19104x-8.0630
+
+**Exercise 8**  
+*Is the feature Age significant to the model? Justify your answer.*
+Age has the lowest p value, which means that there is a strong association between the age and the purchase.
+
+**Exercise 9**  
+*What is the value of AIC of the model?*
+```{r}
+AIC(model)
+```
+
+**Exercise 10**  
+*Plot Purchased in function of Age and add the curve of the obtained logistic regression model.*
+```{r}
+plot(training_set$Age,training_set$Purchased,xlab="Age",ylab="Purchased")
+g=glm(Purchased~Age,family=binomial,training_set)
+curve(predict(g,data.frame(Age=x),type="response"),add=TRUE)
+```
+
+**Exercise 11**  
+*Now let us take another feature into account in the model. Fit a logistic regression model of purchasing the product in function of the age of a user and its salary.*
+```{r}
+g=glm(Purchased~Age+EstimatedSalary,family=binomial,training_set)
+summary(g)
+```
+
+**Exercise 12**  
+*Are the predictors significant to the new model?*  
+The AIC is even lower so yes, the model got better: the predictors are significant.
+
+**Exercise 13**  
+*Do we obtain a better model by adding the estimated salary?*  
+As said before, the model got better.
+
+**Exercise 14**  
+*Predictions: On the test set, predict the probability of purchasing the product by the users using the obtained model.*
+```{r}
+predict(g,test_set[c(3,4)],type="response")
+
+```
+
+**Exercise 15**  
+*Take a look on your predicted values for the variable Purchased. We predicted the probability that the user will purchase the product right? Now in order to compare your results with the real answers, transform the predicted values to 0 or 1 (1 if >0.5).*
+```{r}
+mat<- ifelse(predict(g,test_set[c(3,4)],type="response")>0.5,1,0)
+mat
+```
+
+**Exercise 16**  
+*Now in order to evaluate the model and its predictions, compute the confusion matrix. What do you obtain ?*
+```{r}
+table(mat,test_set[,5])
+```
+
+**Exercise 17**  
+*Calculate the accuracy, specificity, sensitivity and the precision of the model.*
+```{r}
+Accuracy=(57+10)/(57+10+7+26)
+Accuracy
+```
+
+**Exercise 18**  
+*Plot the ROC curve and calculate AUC value.*
+```{r}
+#install.packages(ROCR)
+#install.packages("prediction")
+#install.packages("performance")
+
+#library(prediction)
+#p <- prediction(x)
+#Warning in install.packages :
+  #package 'performance' is not available (for R version 3.4.3)
+```
+
+**Exercise 19**  
+

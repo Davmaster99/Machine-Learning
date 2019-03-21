@@ -1,0 +1,121 @@
+---
+title: "Week 6"
+subtitle: "Principal_Components_Analysis"
+author: COSTA DOS SANTOS David
+date: "`r format(Sys.time())`" # remove the # to show the date
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    theme: united
+    highlight: zenburn
+---
+Exercice 1
+```{r}
+install.packages('ggplot2', repos = "http://cran.us.r-project.org")
+
+
+dataset=read.csv('iris.data')
+summary(dataset)
+```
+
+Exercice 2
+```{r}
+par(mfrow=c(2,2))
+boxplot(sepal_length~class, data=dataset,ylab="Sepal_Length")
+boxplot(sepal_width~class, data=dataset,ylab="Sepal_Length")
+boxplot(petal_length~class, data=dataset,ylab="Sepal_Length")
+boxplot(petal_width~class, data=dataset,ylab="Sepal_Length")
+
+```
+
+Exercice 3
+```{r}
+library(ggplot2) #of course you must install it first if you don't have it already
+## Warning: package 'ggplot2' was built under R version 3.3.3
+# histogram of sepal_length
+ggplot(dataset, aes(x=sepal_length, fill=class)) + geom_histogram(binwidth=.2, alpha=.5)
+ggplot(dataset, aes(x=sepal_width, fill=class)) + geom_histogram(binwidth=.2, alpha=.5)
+ggplot(dataset, aes(x=petal_length, fill=class)) + geom_histogram(binwidth=.2, alpha=.5)
+ggplot(dataset, aes(x=petal_width, fill=class)) + geom_histogram(binwidth=.2, alpha=.5)
+
+```
+
+Exercice 4
+```{r}
+#library(Factoshiny)
+#res.shiny <- PCAshiny(dataset) 
+```
+
+Exercice 5
+```{r}
+pcairis=princomp(iris[,-5], cor=T) 
+str(pcairis)
+summary(pcairis) 
+plot(pcairis) 
+biplot(pcairis)
+
+```
+
+Exercice 6
+```{r}
+x <- dataset[,-5]
+y <- dataset[,5]
+```
+
+Exercice 7
+```{r}
+x_scaled <-scale(x, center = TRUE, scale = TRUE)
+#x_scaled
+```
+
+Exercice 8
+```{r}
+cov=(1/3)*((t(x_scaled))%*% (x_scaled))
+cov
+```
+
+Exercice 9
+```{r}
+eigen(cov, only.values = FALSE, EISPACK = FALSE)
+
+```
+
+Exercice 10
+```{r}
+eigen(cor(x_scaled), only.values = FALSE, EISPACK = FALSE)
+
+```
+
+Exercice 11
+```{r}
+evalue = eigen(cor(x), only.values = FALSE, EISPACK = FALSE)
+
+```
+
+Exercice 12
+```{r}
+varia1 = evalue$values[1]/(evalue$values[1]+evalue$values[2]+evalue$values[3]+evalue$values[4])
+varia2 = evalue$values[2]/(evalue$values[1]+evalue$values[2]+evalue$values[3]+evalue$values[4])
+varia3 = evalue$values[3]/(evalue$values[1]+evalue$values[2]+evalue$values[3]+evalue$values[4])
+varia4 = evalue$values[4]/(evalue$values[1]+evalue$values[2]+evalue$values[3]+evalue$values[4])
+varia1
+varia2
+varia3
+varia4
+vari2 = (evalue$values[1]+evalue$values[2])/(evalue$values[1]+evalue$values[2]+evalue$values[3]+evalue$values[4])
+vari3 = (evalue$values[1]+evalue$values[2]+evalue$values[3])/(evalue$values[1]+evalue$values[2]+evalue$values[3]+evalue$values[4])
+vari2
+vari3
+
+
+```
+
+Exercice 13
+```{r}
+plot(x=c(evalue$values[1],evalue$values[2],evalue$values[3],evalue$values[4]),y=c(varia1,varia2,varia3,varia4))
+
+```
+
+

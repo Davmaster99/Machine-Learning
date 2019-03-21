@@ -1,0 +1,114 @@
+---
+title: "Week 8"
+subtitle: "Gaussian Mixture Models"
+author: COSTA DOS SANTOS David
+date: "`r format(Sys.time())`" # remove the # to show the date
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    theme: united
+    highlight: zenburn
+---
+Exercice 1
+```{r}
+install.packages('dplyr' , repos = "http://cran.us.r-project.org")
+dataset= read.csv("iris.data")
+```
+
+Exercice 2
+```{r}
+set.seed(123)
+sampleiris=sample_n(dataset, 40)
+```
+
+Exercice 3
+```{r}
+sampleiris1=sampleiris[1:4]
+D=dist(sampleiris1)
+D
+```
+
+Exercice 4+5
+```{r}
+dendro.avg <- hclust(D, method = "average")
+plot(dendro.avg)
+```
+
+Exercice 6
+```{r}
+plot(dendro.avg, hang=-1, label=sampleiris$class)
+```
+
+Exercice 7
+```{r}
+group.avg=cutree(dendro.avg, k = 3)
+group.avg
+```
+
+Exercice 8
+```{r}
+plot(dendro.avg, hang=-1, label=sampleiris$class)
+rect.hclust(dendro.avg, 3)
+
+```
+
+Exercice 9
+```{r}
+table(group.avg)
+table(sampleiris$class)
+```
+
+Setosa dans un cluster, virginica dans 2 (un tout seul et un melangé avec versicolor)
+
+Exercice 10
+```{r}
+sampleiris2=dataset[1:4]
+M=dist(sampleiris2)
+dendroavg <- hclust(M, method = "average")
+#plot(dendro.avg)
+plot(dendroavg, hang=-1, label=dataset$class)
+groupavg=cutree(dendroavg, k = 3)
+groupavg
+rect.hclust(dendroavg, 3)
+table(groupavg)
+table(dataset$class)
+```
+La difference avec le sample de 40 observation, c'est que cette fois ci le melange des fleurs versicolor et virginica se fait dans le 2eme cluster
+
+EXERCICE10+
+Complete Linkage
+```{r}
+C=dist(sampleiris2)
+treeComp <- hclust(C, method = "complete")
+plot(treeComp, hang=-1, label=dataset$class)
+Ccut=cutree(treeComp, k = 3)
+rect.hclust(treeComp, 3)
+table(Ccut)
+table(dataset$class)
+```
+
+Single Linkage
+```{r}
+S=dist(sampleiris2)
+treeSingle <- hclust(S, method = "single")
+plot(treeSingle, hang=-1, label=dataset$class)
+SCut=cutree(treeSingle, k = 3)
+rect.hclust(treeSingle, 3)
+table(SCut)
+table(dataset$class)
+```
+
+BONUS
+```{r}
+plot(dendro.avg, hang=-1, label=sampleiris$class)
+group.avg=cutree(dendro.avg, k=3)
+
+identify(k)
+rect.hclust(dendro.avg, k=3)
+
+
+```
+
+

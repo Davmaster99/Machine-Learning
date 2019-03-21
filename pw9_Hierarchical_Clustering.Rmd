@@ -1,0 +1,225 @@
+---
+title: "Week 9"
+subtitle: "Hierarchical Clustering"
+author: COSTA DOS SANTOS David
+date: "`r format(Sys.time())`" # remove the # to show the date
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    theme: united
+    highlight: zenburn
+---
+
+```{r}
+#Pinstall.packages("grid")
+library(grid)
+library(MASS)
+install.packages('dplyr', repos = "http://cran.us.r-project.org") #to subset, summarize,rearrange etc
+library(ggplot2) #for graphics
+library(caTools)
+library(dplyr)
+library(vcd)
+library(caTools)
+#.install.packages("SDMTools")
+library(SDMTools)
+dataset= read.csv("bank_marketing.csv", sep=";")
+colnames(dataset)
+```
+
+EXPLORATION
+```{r}
+table(dataset$y)
+levels(dataset$y)=c(0,1)
+```
+
+```{r}
+hist(dataset$age, breaks=20, col="red",main="distribution of age")
+```
+
+```{r}
+hist(dataset$duration, breaks=20, col="red",main="distribution of call duration")
+
+```
+
+```{r}
+ggplot(dataset, aes(y))+geom_bar(stat="count", fill="Blue")+labs(x="Response", title="Response Count")
+```
+
+
+```{r}
+barplot(table(dataset$job),col="blue", ylab="Nbr of Clients", las=2, main="job", cex.names=.8,cex.axis=0.8)
+```
+
+```{r}
+boxplot(dataset$age~dataset$y, main="Age", ylab="Age of Clients", xlab="Deposit open or not")
+```
+
+
+
+
+
+```{r}
+library(vcd)
+tab2=with(dataset, table(job,y))
+mosaic(tab2,shade=TRUE, data=dataset)
+```
+
+
+
+
+
+
+SPLITTING THE DATASET
+```{r}
+library(caTools)
+set.seed(210922)
+split = sample.split(dataset$y, SplitRatio = 0.75)
+training_set = subset(dataset, split == TRUE)
+test_set = subset(dataset, split == FALSE) 
+prop.table(table(training_set$y))
+nrow(training_set)
+prop.table(table(test_set$y))
+nrow(test_set)
+```
+
+Finding significant variables
+```{r}
+#install.packages("gmodels")
+library(gmodels)
+#weight= chi.squared(y~.,data=dataset)
+#print(weight)
+```
+
+```{r}
+null<-glm(training_set$y~1,data = training_set,family = binomial)
+summary(null)
+```
+
+```{r}
+model1<-glm(training_set$y~.,data = training_set,family = binomial)
+summary(model1)
+```
+```{r}
+
+prediction1<-predict(model1,test_set,type = "response")
+prediction1<-round(prediction1,0)
+prediction1<-as.factor(prediction1)
+
+
+levels(prediction1)<-c(0,1)
+actual1<-test_set[,17]
+levels(actual1)<-c(0,1)
+## confusion matrix for glm model
+conf1<-table(actual1,prediction1)
+conf1 
+```
+We can see that the predicton is not good
+```{r}
+AIC(model1)
+```
+
+
+```{r}
+
+model2<-glm(training_set$y~training_set$job+training_set$education+training_set$default+training_set$contact+training_set$month+
+              training_set$day+training_set$duration+training_set$campaign+training_set$pdays+training_set$poutcome,data = training_set,family = binomial)
+summary(model2)
+```
+```{r}
+AIC(model2)
+```
+
+```{r}
+classifier.logreg <- glm(y ~ duration , family = binomial, data=training_set)
+classifier.logreg
+summary(classifier.logreg)
+pred.glm = predict(classifier.logreg, newdata = test_set[,], type="response")
+pred.glm_0_1 = ifelse(pred.glm >= 0.5, 1,0)
+head(pred.glm)
+head(pred.glm_0_1)
+cm = table(test_set[,2], pred.glm_0_1)
+cm
+mosaicplot(cm,color = 2:3)
+
+accuracy=(cm[1,1]+cm[2,2])/(cm[1,1]+cm[2,2]+cm[1,2]+cm[2,1])
+accuracy
+```
+
+
+PCA
+First, convert the categorical into numerical
+```{r}
+library(dummies)
+
+#create a dummy data frame
+ new_my_data <- dummy.data.frame(dataset, names = c("job","marital", "education","default", "housing","loan","contact","month","poutcome","y"))
+ str(new_my_data)
+```
+
+SPLITTING IN PCA
+```{r}
+pca.train <- new_my_data[1:nrow(training_set),]
+pca.test <- new_my_data[-(1:nrow(training_set)),]
+```
+
+```{r}
+prin_comp <- prcomp(pca.train, scale. = T)
+names(prin_comp)
+prin_comp$center
+prin_comp$scale
+prin_comp$rotation
+prin_comp$rotation[1:5,1:4]
+
+
+dim(prin_comp$x)
+
+biplot(prin_comp, scale = 0)
+
+
+
+
+
+```
+
+
+DATA CLUSTERING
+
+```{r}
+DataSetNum <- data.frame(as.numeric(as.factor(dataset$age)),  as.numeric(as.factor(dataset$job)),as.numeric(as.factor(dataset$marital)), as.numeric(as.factor(dataset$education)),as.numeric(as.factor(dataset$housing)), as.numeric(as.factor(dataset$loan)))
+```
+
+HIERARCHICAL
+```{r}
+
+M=dist(DataSetNum)
+dendroavg <- hclust(M, method = "average")
+#plot(dendro.avg)
+plot(dendroavg, hang=-1, label=dataset$y)
+groupavg=cutree(dendroavg, k = 2)
+groupavg
+rect.hclust(dendroavg, 2)
+table(groupavg)
+table(dataset$y)
+```
+We can see that it's not really clear, but we could cut at 5 or 6
+
+K-MEANS
+```{r}
+set.seed(1234)
+
+kmeansObj <- kmeans(DataSetNum,centers=2)
+names(kmeansObj)
+plot(DataSetNum,col=kmeansObj$cluster,pch=19,cex=2)
+points(kmeansObj$centers,col=1:3,pch=3,cex=3,lwd=3)
+print(kmeansObj)
+```
+
+```{r}
+km2 <- kmeans(DataSetNum,centers=5)
+names(kmeansObj)
+km2
+```
+
+

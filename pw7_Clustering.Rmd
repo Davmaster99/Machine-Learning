@@ -1,0 +1,159 @@
+---
+title: "Week 7"
+subtitle: "Clustering"
+author: COSTA DOS SANTOS David
+date: "`r format(Sys.time())`" # remove the # to show the date
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    theme: united
+    highlight: zenburn
+---
+```{r}
+install.packages('ggplot2', repos = "http://cran.us.r-project.org")
+
+
+laliga <- read.csv("http://mghassany.com/MLcourse/datasets/la-liga-15-16.csv", row.names=1)
+laliga[0:2]
+```
+```{r}
+PointsCards=laliga[,c('Points','Yellow.cards')]
+PointsCards
+```
+
+```{r}
+set.seed(123)
+kmeansObj <- kmeans(PointsCards,centers=2, iter.max = 20)
+names(kmeansObj)
+```
+
+```{r}
+plot(PointsCards,col=kmeansObj$cluster,pch=19,cex=2)
+points(kmeansObj$centers,col=1:3,pch=3,cex=3,lwd=3)
+```
+ Exercice 5
+```{r}
+print(kmeansObj)
+```
+ 
+ It shows to which centroid the variables/values were assigned
+ 
+ Exercice 6
+ 
+ Red: (44,8125,113.25), black: (82.750,78.25)
+ (somehow have to use identify)
+ 
+ Exercice 7 et 8
+```{r}
+library(ggplot2)
+plooot= plot(PointsCards,col=kmeansObj$cluster,pch=19,cex=2)
+#Ploplot <- ggplot(PointsCards, aes(PointsCards$Points, PointsCards$Yellow.cards, )) + geom_point()
+par(new=TRUE)
+points(44.8125,113.25, col="red")
+points(82.750,78.25, col="blue")
+
+
+
+
+```
+ 
+ Exercice 9
+ 
+ 3 clusters:
+```{r}
+set.seed(1234)
+
+kmeansObj <- kmeans(PointsCards,centers=3,iter.max = 20)
+names(kmeansObj)
+plot(PointsCards,col=kmeansObj$cluster,pch=19,cex=2)
+points(kmeansObj$centers,col=1:3,pch=3,cex=3,lwd=3)
+print(kmeansObj)
+
+```
+```{r}
+#library(ggplot2)
+#plot3= plot(PointsCards,col=kmeansObj$cluster,pch=3,cex=2)
+#Ploplot <- ggplot(PointsCards, aes(PointsCards$Points, PointsCards$Yellow.cards, )) + geom_point()
+#par(new=TRUE)
+#points(89.66667,76.33333, col="red")
+#points(42.91667,118.58333, col="blue")
+#points(52.80000,94.60000, col="yellow")
+
+#1 89.66667     76.33333
+#2 42.91667    118.58333
+#3 52.80000     94.60000
+```
+
+4 clusters:
+
+```{r}
+set.seed(1234)
+
+kmeansObj <- kmeans(PointsCards,centers=4,iter.max = 20)
+names(kmeansObj)
+plot(PointsCards,col=kmeansObj$cluster,pch=19,cex=2)
+points(kmeansObj$centers,col=1:3,pch=3,cex=3,lwd=3)
+print(kmeansObj)
+```
+ 
+```{r}
+#library(ggplot2)
+#plot4= plot(PointsCards,col=kmeansObj$cluster,pch=19,cex=2)
+#Ploplot <- ggplot(PointsCards, aes(PointsCards$Points, PointsCards$Yellow.cards, )) + geom_point()
+
+#par(new=TRUE)
+#points(89.66667,76.33333, col="red")
+#points(46.10000,109.30000, col="blue")
+#points(56.00000,89.33333, col="yellow")
+#points(37.50000,133.75000, col="green")
+
+#1 89.66667     76.33333
+#2 46.10000    109.30000
+#3 56.00000     89.33333
+#4 37.50000    133.75000
+```
+
+Exercice 10
+```{r}
+mydata <- PointsCards
+wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+  for (i in 2:15) wss[i] <- sum(kmeans(mydata,  centers=i)$withinss)
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+```
+Exercice 11
+```{r}
+mydata <- PointsCards
+wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+total=kmeans(mydata, centers=i)$totss
+  for (i in 1:15) wss[i] <- sum(kmeans(mydata, centers=i)$betweenss/total)
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab=" between_ss/total_ss")
+```
+
+Exercice 12
+Kmean on Laliga
+```{r}
+laligascaled <- scale(laliga) #only first two columns
+set.seed(123)
+km <- kmeans(laliga,centers=3, iter.max = 20)
+names(kmeansObj)
+km
+```
+
+Kmean on laligacaled
+```{r}
+set.seed(123)
+km2 <- kmeans(laligascaled,centers=3, iter.max = 20)
+names(kmeansObj)
+km2
+```
+
+Exercice 14:
+```{r}
+table(km$cluster)
+table(km2$cluster)
+```
+
+IMPLEMENTING KMEANS
+

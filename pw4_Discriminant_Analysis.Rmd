@@ -1,0 +1,239 @@
+---
+title: "Week 4"
+author: "COSTA DOS SANTOS David"
+date: "`r format(Sys.time())`"
+output:
+  html_document:
+    highlight: espresso
+    theme: cerulean
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+subtitle: Discriminant Analysis
+---
+Exercice 1 
+```{r}
+
+install.packages('ROCR', repos = "http://cran.us.r-project.org")
+
+dataset = read.csv("Social_Network_Ads.csv")
+dataset = dataset[3:5] #Removing first 2 colums
+
+library(caTools)
+
+set.seed(123) 
+
+split = sample.split(dataset$Purchased, SplitRatio = 0.75) 
+training_set = subset(dataset, split == TRUE) 
+test_set = subset(dataset, split == FALSE)
+
+# scaling*
+training_set[-3] = scale(training_set[-3])
+test_set[-3] = scale(test_set[-3])
+
+#logistic regression
+classifier.logreg <- glm(Purchased ~ Age + EstimatedSalary , family = binomial, data=test_set)
+
+# prediction
+pred.glm = predict(classifier.logreg, newdata = test_set[,-3], type = "response")
+pred.glm = ifelse(pred.glm >= 0.5, 1, 0)
+```
+
+Exercice 2
+```{r}
+summary(classifier.logreg)
+
+plot(test_set$Age, test_set$EstimatedSalary)
+abline(b = - classifier.logreg$coefficient[2] / classifier.logreg$coefficient[3], a = - classifier.logreg$coefficient[1] / classifier.logreg$coefficients[3])
+```
+
+Exercice 3
+```{r}
+bg = ifelse(pred.glm == 1, 'red', 'blue')
+plot(test_set$Age, test_set$EstimatedSalary, col = bg, main="Estimated Salary in function of Age", xlab="Age", ylab="EstimatedSalary")
+abline(b = - classifier.logreg$coefficient[2] / classifier.logreg$coefficient[3], a = - classifier.logreg$coefficient[1] / classifier.logreg$coefficients[3], lwd=2)
+```
+
+Exercice 4
+```{r}
+# Real color with respect to their real labels
+realColor = ifelse(test_set$Purchased == 1, "blue", "green")
+plot(test_set$Age, test_set$EstimatedSalary, col = realColor, main="Estimated Salary in function of Age", xlab="Age", ylab="EstimatedSalary")
+abline(b = -  classifier.logreg$coefficient[2] / classifier.logreg$coefficient[3], a = - classifier.logreg$coefficient[1] / classifier.logreg$coefficients[3], lwd=2)
+```
+
+```{r}
+# We can count 7 false positive prediction (number of green points on the right the line)
+# Confusion matrix
+table(test_set$Purchased, pred.glm)
+```
+The confusion matrix indicates 7 false positive  
+
+Exercice 5&6
+```{r}
+library("MASS")
+classifier.lda <- lda(Purchased~Age+EstimatedSalary, data=training_set)
+classifier.lda
+classifier.lda$prior
+classifier.lda$means
+```
+
+
+Exercice 7
+```{r}
+pred.lda = predict(classifier.lda, newdata = test_set, type = "response")
+str(pred.lda)
+```
+
+Exercice 8
+```{r}
+table(test_set$Purchased, pred.lda$class)
+```
+We obtain the same confusion matrix as previously when we predicted the log reg model  
+Exercice 9
+```{r}
+# create a grid corresponding to the scales of Age and EstimatedSalary
+# and fill this grid with lot of points
+X1 = seq(min(training_set[, 1]) - 1, max(training_set[, 1]) + 1, by = 0.01)
+X2 = seq(min(training_set[, 2]) - 1, max(training_set[, 2]) + 1, by = 0.01)
+grid_set = expand.grid(X1, X2)
+# Adapt the variable names
+colnames(grid_set) = c('Age', 'EstimatedSalary')
+
+# plot 'Estimated Salary' ~ 'Age'
+plot(test_set[, -3],
+     main = 'Decision Boundary LDA',
+     xlab = 'Age', ylab = 'Estimated Salary',
+     xlim = range(X1), ylim = range(X2))
+
+# color the plotted points with their real label (class)
+points(test_set, pch = 21, bg = ifelse(test_set[, 3] == 1, 'green4', 'red3'))
+
+# Make predictions on the points of the grid, this will take some time
+pred_grid = predict(classifier.lda, newdata = grid_set)$class
+
+# Separate the predictions by a contour
+contour(X1, X2, matrix(as.numeric(pred_grid), length(X1), length(X2)), add = TRUE)
+```
+
+Exercice 10
+```{r}
+# STEP 1 (10.1)
+class0 = training_set[training_set$Purchased==0,]
+class1 = training_set[training_set$Purchased==1,]
+
+# STEP 2 (10.2)
+pi0 = dim(class0)[1] / (dim(class0)[1] + dim(class1)[1])
+pi1 = dim(class1)[1] / (dim(class0)[1] + dim(class1)[1])
+
+# STEP 3 (10.3)
+mu0 = c(mean(class0$Age), mean(class0$EstimatedSalary))
+mu1 = c(mean(class1$Age), mean(class1$EstimatedSalary))
+
+# STEP 4 (10.4)
+sigma0 = cov(class0[,-3])
+sigma1 = cov(class1[,-3])
+
+sigma = ((dim(class0)[1] - 1)  * sigma0 + (dim(class1)[1] - 1) * sigma1) / (dim(class0)[1] + dim(class1)[1] - 2)
+sigma
+```
+```{r}
+# STEP 5 (10.5)
+xt = c(1, 1.5)
+
+xt=as.matrix(xt)
+delta0 = t(xt) %*% solve(sigma) %*% as.matrix(mu0) - 0.5 * t(as.matrix(mu0)) %*% solve(sigma) %*% as.matrix(mu0) + log(pi0)
+delta1 = t(xt) %*% solve(sigma) %*% as.matrix(mu1) - 0.5 * t(as.matrix(mu1)) %*% solve(sigma) %*% as.matrix(mu1) + log(pi1)
+
+delta0
+delta1
+# We can see that delta1 is greater than delta0 so X can be attributed to X2
+
+# STEP 6 (10.6)
+for (i in 1:100){
+  delta0[i] = as.matrix(test_set[i,1:2]) %*% solve(sigma) %*% as.matrix(mu0) - 0.5 * t(as.matrix(mu0)) %*% solve(sigma) %*% as.matrix(mu0) + log(pi0)
+  delta1[i] = as.matrix(test_set[i,1:2]) %*% solve(sigma) %*% as.matrix(mu1) - 0.5 * t(as.matrix(mu1)) %*% solve(sigma) %*% as.matrix(mu1) + log(pi1)
+}
+  final = cbind(delta0,delta1)
+  C = c(1,100)
+  
+  for (j in 1:100){
+    C[j] = ifelse(delta0[j] > delta1[j],0,1)
+  }
+  final = cbind(delta0, delta1, C)
+  
+  for(i in 1:100){
+  delta0X = t(final[i,1:2]) %*% solve(sigma) %*% as.matrix(mu0) - 0.5 * t(as.matrix(mu0)) %*% solve(sigma) %*% as.matrix(mu0) + log(pi0)
+  delta1X = t(final[i,1:2]) %*% solve(sigma) %*% as.matrix(mu1) - 0.5 * t(as.matrix(mu1)) %*% solve(sigma) %*% as.matrix(mu1) + log(pi1)
+  }
+  
+# we can see that delta0X is greater than delta1X so X can be attributed to X1
+
+```
+
+Exercice 11
+```{r}
+classifier.qda <- qda(Purchased~., data = training_set)
+```
+
+Exercice 12
+```{r}
+# Prediction on test set using the QDA model
+pred.qda = predict(classifier.qda, newdata = test_set, type = "response")
+table(test_set$Purchased, pred.qda$class)
+```
+ The confusion matrix is not the same as we previously obtained when we used the LDA model
+ With the QDA model, we have 7 false positive (same result as LDA model)
+ But, we also have 4 x False Negative & 32 True Negative
+
+Exercice 13
+```{r}
+X3 = seq(min(training_set[, 1]) - 1, max(training_set[, 1]) + 1, by = 0.01)
+X4 = seq(min(training_set[, 2]) - 1, max(training_set[, 2]) + 1, by = 0.01)
+grid_set = expand.grid(X1, X2)
+
+colnames(grid_set) = c('Age', 'EstimatedSalary')
+
+plot(test_set[, -3],
+     main = 'Decision Boundary LDA',
+     xlab = 'Age', ylab = 'Estimated Salary',
+     xlim = range(X3), ylim = range(X4))
+
+points(test_set, pch = 21, bg = ifelse(test_set[, 3] == 1, 'green4', 'red3'))
+
+pred_grid2 = predict(classifier.qda, newdata = grid_set)$class
+
+contour(X3,X4,matrix(as.numeric(pred_grid2), length(X3),length(X4)),add = TRUE)
+X3 = seq(min(training_set[, 1]) - 1, max(training_set[, 1]) + 1, by = 0.01)
+X4 = seq(min(training_set[, 2]) - 1, max(training_set[, 2]) + 1, by = 0.01)
+grid_set = expand.grid(X1, X2)
+
+colnames(grid_set) = c('Age', 'EstimatedSalary')
+
+plot(test_set[, -3],
+     main = 'Decision Boundary LDA',
+     xlab = 'Age', ylab = 'Estimated Salary',
+     xlim = range(X3), ylim = range(X4))
+
+points(test_set, pch = 21, bg = ifelse(test_set[, 3] == 1, 'green4', 'red3'))
+
+pred_grid2 = predict(classifier.qda, newdata = grid_set)$class
+
+contour(X3, X4, matrix(as.numeric(pred_grid2), length(X3), length(X4)), add = TRUE)
+```
+Exercice 14
+```{r}
+library(ROCR)
+roc.glm = performance(prediction(predict(classifier.logreg,newdata=test_set, type="response"), test_set$Purchased), measure="tpr",  x.measure="fpr")
+roc.lda = performance(prediction(pred.lda$posterior[,2], test_set$Purchased), measure="tpr", x.measure="fpr")
+roc.qda = performance(prediction(pred.qda$posterior[,2], test_set$Purchased), measure="tpr", x.measure="fpr")
+
+plot(roc.glm,col="red")
+plot(roc.lda,col="blue",add=TRUE)
+plot(roc.qda,col="green",add=TRUE)
+# The classifier with the greatest AUC, which correponds to the greatest area under the ROC curve, is the green one. Therefore the best model for this dataset was the QDA model.
+```
+
